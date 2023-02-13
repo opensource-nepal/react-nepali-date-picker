@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Bootstrap App",
+      "type": "shell",
+      "command": "yarn bootstrap",
+      "windows": {
+        "command": "yarn bootstrap"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}

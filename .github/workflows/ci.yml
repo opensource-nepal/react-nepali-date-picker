@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn run typecheck
+      - run: yarn run lint
+      - run: yarn run test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn run build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: rdp-dist
+          path: packages/picker/dist
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org/
+          always-auth: false
+      - uses: actions/download-artifact@v3
+        with:
+          name: rdp-dist
+          path: packages/picker/dist
+      - run: echo "//<npm-registry>:8080/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+      - run: npm publish --dry-run
+        working-directory: packages/picker
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
